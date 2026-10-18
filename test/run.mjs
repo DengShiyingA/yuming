@@ -3,7 +3,8 @@
 // 2. 域名评分：几个关键例子的等级
 import fs from 'node:fs';
 import path from 'node:path';
-import { classifyWhois } from '../lib/check.js';
+import os from 'node:os';
+import { classifyWhois, writeFileAtomic } from '../lib/check.js';
 import '../public/grade.js';
 
 const dir = path.join(import.meta.dirname, 'fixtures', 'whois');
@@ -38,6 +39,18 @@ for (const [d, want] of grades) {
 }
 const shape = [['bok', 'alternating', true], ['abc', 'alternating', false], ['zxb', 'readable', false], ['yimu', 'readable', true]];
 for (const [n, fn, want] of shape) check(g[fn](n) === want, `${fn}(${n}) = ${want}`, `实际 ${g[fn](n)}`);
+
+// 并发写同一个文件不能写坏（直接 writeFile 实测 200 次坏 136 次）
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'yuming-test-'));
+const target = path.join(tmpDir, 'race.json');
+let broken = 0;
+for (let i = 0; i < 50; i++) {
+  await Promise.all([writeFileAtomic(target, JSON.stringify({ a: 'x'.repeat(100000) })), writeFileAtomic(target, JSON.stringify({ b: 1 }))]);
+  try { JSON.parse(fs.readFileSync(target, 'utf8')); } catch { broken++; }
+}
+const leftovers = fs.readdirSync(tmpDir).filter((f) => f.endsWith('.tmp')).length;
+fs.rmSync(tmpDir, { recursive: true, force: true });
+check(broken === 0 && leftovers === 0, '并发写入 50 轮不损坏、不留临时文件', `损坏 ${broken} 次，残留 ${leftovers} 个`);
 
 console.log(`\n${pass} 通过，${fail} 失败`);
 process.exit(fail ? 1 : 0);

@@ -60,8 +60,18 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-// 单个请求出错不能把整个服务带崩
-process.on('unhandledRejection', (e) => console.error('unhandledRejection:', e));
+// 单个请求、单个注册局连接出错不能把整个服务带崩（服务停了关注列表也就没人检查了）
+process.on('unhandledRejection', (e) => console.error('未处理的异步错误：', e));
+process.on('uncaughtException', (e) => console.error('未捕获的异常：', e));
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`端口 ${PORT} 已被占用：可能服务已经开着（直接打开 http://localhost:${PORT}），或换个端口：PORT=8080 npm start`);
+  } else {
+    console.error('服务启动失败：', e.message);
+  }
+  process.exit(1);
+});
 
 startWatchLoop();
 
