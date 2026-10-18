@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>域名查询</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23e8572a'/><text x='16' y='22' text-anchor='middle' font-size='16' fill='white' font-family='sans-serif'>.</text></svg>">
+<style>
+  :root {
+    --paper: #f6f2ea; --card: #fffdf8; --ink: #1b1813; --muted: #7a7366; --line: #e3dccd;
+    --accent: #e8572a; --ok: #1f8a4c; --ok-bg: #e4f3e8; --taken: #8a8173; --taken-bg: #efeae0;
+    --warn: #b7791f; --warn-bg: #fbf0da; --bad: #b83a3a; --bad-bg: #f8e3e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #16140f; --card: #1f1c16; --ink: #f1ece2; --muted: #9b9384; --line: #332e25;
+      --ok: #5fcf8a; --ok-bg: #173323; --taken: #a39a8a; --taken-bg: #29251e;
+      --warn: #e4b35a; --warn-bg: #362a14; --bad: #ea7b7b; --bad-bg: #3a1c1c;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font: 15px/1.55 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 56px 16px 80px; }
+  header h1 { font-size: clamp(34px, 7vw, 56px); line-height: 1.05; margin: 0 0 10px; letter-spacing: -0.02em; font-weight: 800; }
+  header h1 em { font-style: normal; color: var(--accent); }
+  header p { margin: 0 0 32px; color: var(--muted); }
+
+  .search { display: flex; gap: 10px; background: var(--card); border: 2px solid var(--ink); border-radius: 16px; padding: 8px; }
+  .search textarea { flex: 1; border: 0; outline: 0; resize: none; background: transparent; color: var(--ink);
+    font: 500 20px/1.4 ui-monospace, "SF Mono", Menlo, monospace; padding: 10px 12px; min-height: 52px; }
+  .search button { align-self: flex-start; min-height: 52px; border: 0; border-radius: 10px; padding: 0 26px; font: 700 16px inherit; font-family: inherit;
+    background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap; }
+  .search button.stop { background: var(--ink); color: var(--paper); }
+  .top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .watch-btn { border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 7px 14px;
+    font: inherit; font-size: 14px; cursor: pointer; }
+  .watch-btn.alert { border-color: var(--accent); color: var(--accent); }
+  .watch-panel { margin: 0 0 16px; }
+  .watch-list { list-style: none; margin: 0; padding: 4px 12px 12px; }
+  .watch-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .watch-list li:first-child { border-top: 0; }
+  .watch-list .w-name { font: 600 15px ui-monospace, "SF Mono", Menlo, monospace; }
+  .watch-list .w-meta { color: var(--muted); font-size: 12.5px; }
+  .watch-list .w-new { color: var(--accent); font-weight: 600; }
+  .watch-list .w-del { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+  .watch-empty { color: var(--muted); font-size: 13px; padding: 14px 0; }
+  .star { border: 0; background: none; color: var(--muted); font-size: 17px; cursor: pointer; padding: 0 2px; line-height: 1; }
+  .star.on { color: var(--accent); }
+  .modes { display: inline-flex; gap: 4px; background: var(--taken-bg); padding: 4px; border-radius: 11px; margin-bottom: 14px; }
+  .modes button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600;
+    padding: 7px 16px; border-radius: 8px; cursor: pointer; }
+  .modes button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .search input#letters { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink);
+    font: 500 20px/1.4 ui-monospace, "SF Mono", Menlo, monospace; padding: 10px 12px; letter-spacing: .08em; }
+  .short-opts { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 12px 4px 0; font-size: 14px; }
+  .short-opts .grp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .short-opts .lbl { color: var(--muted); font-size: 13px; }
+  .mini { border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 4px 10px;
+    font: inherit; font-size: 13px; cursor: pointer; min-width: 34px; }
+  .mini[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .short-opts label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .short-opts select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1.5px solid var(--line);
+    background: var(--card); color: var(--ink); }
+  .qopts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 10px 4px 0; font-size: 14px; }
+  .qopts select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1.5px solid var(--line);
+    background: var(--card); color: var(--ink); }
+  .estimate { color: var(--muted); font-size: 13px; }
+  .estimate b { color: var(--ink); }
+  .eta { color: var(--muted); font-size: 12.5px; margin: -2px 2px 8px; }
+  .short-info { width: 100%; color: var(--muted); font-size: 13px; }
+  .short-info b { color: var(--ink); }
+  .short-info .over { color: var(--bad); }
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 4px 0; }
+  .hint code { background: var(--taken-bg); padding: 1px 6px; border-radius: 4px; }
+
+  .groups { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; align-items: center; }
+  .groups .label { color: var(--muted); font-size: 13px; margin-right: 4px; }
+  .chip { border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px;
+    padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+  .chip small { opacity: .6; margin-left: 4px; }
+  .picker { margin-top: 14px; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .picker[hidden] { display: none; }
+  .pk-head { display: flex; gap: 10px; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); }
+  .pk-head input { flex: 1; min-width: 0; border: 1.5px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink);
+    padding: 8px 12px; font: inherit; font-size: 14px; outline: 0; }
+  .pk-head input:focus { border-color: var(--ink); }
+  .pk-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .pk-count b { color: var(--accent); }
+  .pk-btn { border: 1.5px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 6px 10px;
+    font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .pk-btn.link { border: 0; color: var(--muted); padding: 6px 4px; }
+  .picker.collapsed .pk-body, .picker.collapsed #pkSearch, .picker.collapsed #pkAction { display: none; }
+  .picker.collapsed .pk-head { border-bottom: 0; padding: 6px 12px; }
+  .picker.view .tg { cursor: default; }
+  .picker.view #pkSearch { display: none; }
+  .picker.view .pk-count { margin-right: auto; }
+  .pk-body { max-height: 420px; overflow-y: auto; padding: 4px 12px 12px; overscroll-behavior: contain; }
+  .pk-sec h4 { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .pk-sec h4 span { flex: 1; }
+  .pk-sec h4 button, .pk-add { border: 0; background: none; color: var(--accent); font: inherit; font-size: 12.5px; cursor: pointer; padding: 2px 4px; }
+  .pk-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tg { border: 1.5px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 4px 10px;
+    font: 13px ui-monospace, "SF Mono", Menlo, monospace; cursor: pointer; }
+  .tg small { font-family: -apple-system, "PingFang SC", sans-serif; color: var(--muted); margin-left: 4px; font-size: 11.5px; }
+  .tg[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tg[aria-pressed="true"] small { color: rgba(255,255,255,.8); }
+  .pk-empty { color: var(--muted); font-size: 13px; padding: 16px 0 4px; }
+
+  .bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin: 36px 0 12px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tabs { display: flex; gap: 4px; background: var(--taken-bg); padding: 4px; border-radius: 10px; }
+  .tabs button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 7px; cursor: pointer; }
+  .tabs button.on { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .tabs b { font-weight: 600; margin-left: 4px; }
+  .restored { color: var(--muted); font-size: 12.5px; margin: -4px 4px 10px; }
+  .restored button { border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; padding: 0 4px; }
+  .retry-msg { color: var(--muted); font-size: 12.5px; }
+  .tools button:disabled { opacity: .55; cursor: default; }
+  .tools button { border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .progress { height: 3px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+  ul.results { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  ul.results:empty { display: none; }
+  .row { border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  .row .main { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 14px 18px; cursor: pointer; }
+  .row .name { font: 600 17px ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+  .row .name .tld { color: var(--accent); }
+  .row .meta { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .grade { font: 700 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+    border: 1.5px solid var(--line); color: var(--muted); }
+  .grade.g-S { border-color: var(--accent); color: var(--accent); }
+  .grade.g-A { border-color: var(--ok); color: var(--ok); }
+  .grade.g-B { color: var(--ink); }
+  .right { display: flex; align-items: center; gap: 8px; }
+  .badge { font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+  .s-available .badge { background: var(--ok-bg); color: var(--ok); }
+  .s-likely-available .badge { background: var(--ok-bg); color: var(--ok); opacity: .75; }
+  .s-registered .badge { background: var(--taken-bg); color: var(--taken); }
+  .s-reserved .badge, .s-unknown .badge, .s-premium .badge, .s-dropzone .badge { background: var(--warn-bg); color: var(--warn); }
+  .s-invalid .badge, .s-error .badge { background: var(--bad-bg); color: var(--bad); }
+  .s-pending .badge { background: transparent; color: var(--muted); }
+  .s-pending .badge::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px;
+    border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .detail { display: none; padding: 0 18px 16px; font-size: 13.5px; }
+  .row.open .detail { display: block; }
+  .detail dl { display: grid; grid-template-columns: 90px 1fr; gap: 4px 12px; margin: 0; }
+  .detail dt { color: var(--muted); }
+  .detail dd { margin: 0; overflow-wrap: anywhere; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 12.5px; }
+  @media (max-width: 560px) {
+    .wrap { padding-top: 36px; }
+    .search { flex-direction: column; }
+    .search button { padding: 12px; align-self: stretch; }
+    .search textarea, .search input#letters { flex: none; }
+    .pk-body { max-height: 300px; }
+    .pk-head { flex-wrap: wrap; }
+    .pk-head input { flex-basis: 100%; }
+    .pk-count { margin-right: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>这个域名<br>还<em>能注册</em>吗？</h1>
+    <p>支持全球全部 1400+ 后缀：.com、.cn、.io、.ai、.co.uk、.中国……实时查询注册局。</p>
+  </header>
+
+  <div class="top-row">
+    <div class="modes" id="modes">
+      <button type="button" data-mode="normal">查域名</button>
+      <button type="button" data-mode="short">短域名</button>
+    </div>
+    <button type="button" class="watch-btn" id="watchBtn">☆ 关注</button>
+  </div>
+  <div class="picker watch-panel" id="watchPanel" hidden>
+    <div class="pk-head">
+      <span class="pk-count">关注的域名每 30 分钟自动检查一次，变成可注册或进入释放期时，页面开着就会弹通知</span>
+      <button type="button" class="pk-btn" id="watchCheck">立即检查</button>
+    </div>
+    <ul class="watch-list" id="watchList"></ul>
+  </div>
+  <form class="search" id="form">
+    <textarea id="q" rows="1" placeholder="example.com 或 example" autofocus spellcheck="false" autocapitalize="off"></textarea>
+    <input id="letters" hidden placeholder="输入可用字母，如 abcxyz" spellcheck="false" autocapitalize="off" autocomplete="off">
+    <button id="go" type="submit">查询</button>
+  </form>
+  <div class="hint" id="hintNormal">带后缀查单个；只输名字则按下方后缀组批量查。多个用空格、逗号或换行分隔，例如 <code>abc.com xyz.cn mybrand</code></div>
+  <div class="short-opts" id="shortOpts" hidden>
+    <div class="grp"><span class="lbl">快速填入</span>
+      <button type="button" class="mini" data-fill="abcdefghijklmnopqrstuvwxyz">a–z</button>
+      <button type="button" class="mini" data-fill="0123456789">0–9</button>
+      <button type="button" class="mini" data-fill="">清空</button>
+    </div>
+    <div class="grp" id="lengths"><span class="lbl">长度</span></div>
+    <label><input type="checkbox" id="repeat" checked> 允许字母重复（如 aab）</label>
+    <label>筛选 <select id="shortFilter">
+      <option value="all">全部组合</option>
+      <option value="readable">只要好读的</option>
+      <option value="alternating">辅音元音交替（bok、tavi）</option>
+    </select></label>
+    <div class="short-info" id="shortInfo"></div>
+  </div>
+  <div class="qopts">
+    <label>只查等级 <select id="queryGrade">
+      <option value="">不限</option>
+      <option value="S">只查 S 级</option>
+      <option value="A">A 级及以上</option>
+      <option value="B">B 级及以上</option>
+    </select></label>
+    <span class="estimate" id="estimate"></span>
+  </div>
+
+  <div class="groups" id="groups"><span class="label">后缀组</span></div>
+  <div class="picker" id="picker" hidden>
+    <div class="pk-head">
+      <input id="pkSearch" type="search" placeholder="搜索后缀或国家，如 io、日本、co.uk" autocomplete="off" spellcheck="false">
+      <span class="pk-count" id="pkCountWrap"><span id="pkCountLabel">已选</span> <b id="pkCount">0</b></span>
+      <button type="button" class="pk-btn" id="pkAction">基于此组自定义</button>
+      <button type="button" class="pk-btn link" id="pkToggle">收起</button>
+    </div>
+    <div class="pk-body" id="pkBody"></div>
+  </div>
+
+  <div class="bar" id="bar" hidden>
+    <div class="filters"><div class="tabs" id="tabs"></div><div class="tabs" id="gradeTabs"></div></div>
+    <div class="tools"><span id="retryMsg" class="retry-msg"></span> <button id="retry" type="button" hidden>重试失败项</button> <button id="sort" type="button">按等级排序</button> <button id="copy" type="button">复制可注册</button> <button id="csv" type="button">导出 CSV</button></div>
+  </div>
+  <div class="restored" id="restored" hidden></div>
+  <div class="progress" id="progress" hidden><i></i></div>
+  <div class="eta" id="eta" hidden></div>
+  <ul class="results" id="results"></ul>
+  <div class="empty" id="empty" hidden>没有符合筛选的结果</div>
+
+  <footer>数据来源：注册局 RDAP → WHOIS → DNS 依次兜底。“可能可注册”表示该后缀无公开查询接口、仅凭 DNS 判断；溢价词、保留词以注册商下单页为准。</footer>
+</div>
+
+<script src="/grade.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

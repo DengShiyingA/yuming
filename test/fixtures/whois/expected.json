@@ -1,0 +1,86 @@
+{
+ "io-not-found": {
+  "status": "available",
+  "note": ".io 未注册"
+ },
+ "io-registered": {
+  "status": "registered",
+  "note": ".io 已注册"
+ },
+ "io-platinum": {
+  "status": "reserved",
+  "note": ".io 白金保留，原文含 available for purchase"
+ },
+ "io-dropzone": {
+  "status": "dropzone",
+  "note": ".io 释放期 Dropzone"
+ },
+ "io-dpml": {
+  "status": "reserved",
+  "note": ".io 品牌保护 DPML 屏蔽"
+ },
+ "jp-registered": {
+  "status": "registered",
+  "note": "JPRS [Domain Name] 方括号格式"
+ },
+ "jp-not-found": {
+  "status": "available",
+  "note": "JPRS 未注册"
+ },
+ "cn-registered": {
+  "status": "registered",
+  "note": ".cn 已注册"
+ },
+ "cn-not-found": {
+  "status": "available",
+  "note": ".cn No matching record"
+ },
+ "de-free": {
+  "status": "available",
+  "note": ".de Status: free"
+ },
+ "de-registered": {
+  "status": "registered",
+  "note": ".de 已注册"
+ },
+ "bg-available": {
+  "status": "available",
+  "note": ".bg registration status: available"
+ },
+ "tw-no-found": {
+  "status": "available",
+  "note": ".tw No Found"
+ },
+ "il-not-found": {
+  "status": "available",
+  "note": ".il 全是 % 注释行里的 No data was found"
+ },
+ "ug-restricted": {
+  "status": "reserved",
+  "note": ".ug violates registry policy"
+ },
+ "eu-available": {
+  "status": "available",
+  "note": ".eu Status: AVAILABLE"
+ },
+ "rate-limited": {
+  "status": "error:limit",
+  "note": "注册局限流提示（.us/.tv 实际回复）"
+ },
+ "gmo-retired": {
+  "status": "error:retired",
+  "note": "GMO WHOIS 停服公告"
+ },
+ "tld-not-supported": {
+  "status": "error:retired",
+  "note": "gTLD WHOIS 停服"
+ },
+ "empty": {
+  "status": "error",
+  "note": "空回复"
+ },
+ "cn-too-fast": {
+  "status": "error:limit",
+  "note": "CNNIC 限流：Queried interval is too short"
+ }
+}
