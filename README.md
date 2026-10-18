@@ -13,7 +13,7 @@
 ## 快速开始
 
 ```bash
-git clone <仓库地址> && cd yuming
+git clone https://github.com/DengShiyingA/yuming.git && cd yuming
 npm start               # 打开 http://localhost:3000
 ```
 
